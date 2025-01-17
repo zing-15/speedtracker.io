@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speed Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 20%;
+    }
+    h1 {
+      font-size: 2em;
+      color: #333;
+    }
+    p {
+      font-size: 1.2em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Real-Time Speed Tracker</h1>
+  <p id="speed">Initializing...</p >
+  <p id="status">Waiting for location...</p >
+
+  <script>
+    let lastPosition = null;
+    let lastTimestamp = null;
+
+    // Function to calculate distance between two coordinates (Haversine formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth radius in kilometers
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c * 1000; // Distance in meters
+    }
+
+    function toRad(degrees) {
+      return degrees * (Math.PI / 180);
+    }
+
+    // Function to update speed every 5 seconds
+    function updateSpeed() {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const currentTimestamp = position.timestamp;
+        const currentPosition = position.coords;
+
+        if (lastPosition && lastTimestamp) {
+          const distance = calculateDistance(
+            lastPosition.latitude,
+            lastPosition.longitude,
+            currentPosition.latitude,
+            currentPosition.longitude
+          );
+          const timeElapsed = (currentTimestamp - lastTimestamp) / 1000; // Time in seconds
+          const speed = (distance / timeElapsed) * 3.6; // Convert m/s to km/h
+
+          document.getElementById("speed").textContent = `Speed: ${speed.toFixed(2)} km/h`;
+        } else {
+          document.getElementById("status").textContent = "Waiting for initial data...";
+        }
+
+        lastPosition = currentPosition;
+        lastTimestamp = currentTimestamp;
+      }, (error) => {
+        document.getElementById("status").textContent = `Error: ${error.message}`;
+      });
+    }
+
+    // Update speed every 5 seconds
+    setInterval(updateSpeed, 5000);
+  </script>
+</body>
+</html>
